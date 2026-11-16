@@ -2,289 +2,289 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { User, Mail, Lock, ArrowRight, AlertCircle, CheckCircle } from 'lucide-react';
 
 export default function SignupPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('employee@smit.com');
   const [password, setPassword] = useState('123456');
   const [role, setRole] = useState('Employee');
-  const [errorMsg, setErrorMsg] = useState('');
-  const [successMsg, setSuccessMsg] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  const handleRoleSelect = (selectedRole) => {
+  const handleRoleChange = (selectedRole) => {
     setRole(selectedRole);
-    if (selectedRole === 'Employee') {
-      setEmail('employee@smit.com');
-    } else if (selectedRole === 'HR') {
+    if (selectedRole === 'HR') {
       setEmail('hr@smit.com');
+    } else {
+      setEmail('employee@smit.com');
     }
   };
 
-  const handleSignupSubmit = async (e) => {
+  const handleSignup = async (e) => {
     e.preventDefault();
-    setErrorMsg('');
-    setSuccessMsg('');
+    setError('');
+    setLoading(true);
 
     try {
       const res = await fetch('/api/auth/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password, role })
+        body: JSON.stringify({ name, email, password, role }),
       });
 
       const data = await res.json();
 
-      if (res.ok) {
-        localStorage.setItem('userRole', role);
-        localStorage.setItem('userName', name || 'User');
-        setSuccessMsg(`Success! Directing to ${role} Dashboard...`);
-        
-        setTimeout(() => {
-          if (role === 'HR') {
-            router.push('/dashboard/hr');
-          } else {
-            router.push('/dashboard/employee');
-          }
-        }, 800);
+      if (!res.ok) {
+        setError(data.message || 'Signup failed.');
+        setLoading(false);
+        return;
+      }
+
+      localStorage.setItem('userName', data.name);
+      localStorage.setItem('userRole', data.role);
+      localStorage.setItem('userEmail', email);
+
+      if (data.role === 'Admin') {
+        router.push('/dashboard/admin');
+      } else if (data.role === 'HR') {
+        router.push('/dashboard/hr');
       } else {
-        setErrorMsg(data.message || 'Something went wrong.');
+        router.push('/dashboard/employee');
       }
     } catch (err) {
-      setErrorMsg('Server connection failed. Ensure dev server is running.');
+      setError('Something went wrong. Please try again.');
+      setLoading(false);
     }
   };
 
   return (
-    <main style={{ 
-      display: 'flex', 
-      justifyContent: 'center', 
-      alignItems: 'center', 
-      minHeight: '100vh', 
-      background: '#24527d', 
-      fontFamily: 'system-ui, -apple-system, sans-serif',
-      padding: '20px 0'
+    <div style={{
+      minHeight: '100vh',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      background: 'linear-gradient(135deg, #a7d0e4 0%, #7db4d2 40%, #8bbad6 100%)',
+      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
+      padding: '20px'
     }}>
-      <form onSubmit={handleSignupSubmit} style={{ 
-        background: 'rgba(52, 94, 138, 0.75)', 
-        backdropFilter: 'blur(10px)',
-        padding: '35px 35px', 
-        borderRadius: '20px', 
-        boxShadow: '0 12px 40px rgba(0,0,0,0.25)', 
-        width: '440px', 
-        maxWidth: '90%', 
-        color: 'white',
-        textAlign: 'center',
-        border: '1px solid rgba(255, 255, 255, 0.12)'
+      <div style={{
+        width: '100%',
+        maxWidth: '440px',
+        background: 'rgba(28, 43, 60, 0.75)',
+        backdropFilter: 'blur(16px)',
+        WebkitBackdropFilter: 'blur(16px)',
+        borderRadius: '20px',
+        border: '1px solid rgba(255, 255, 255, 0.15)',
+        boxShadow: '0 25px 50px rgba(0, 0, 0, 0.25)',
+        padding: '36px 32px',
+        boxSizing: 'border-box',
+        color: '#ffffff'
       }}>
-        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '8px' }}>
-          <Image 
-            src="/logo.png-removebg-preview.png" 
-            alt="HCM Lite Logo" 
-            width={210} 
-            height={100} 
-            style={{ objectFit: 'contain', width: 'auto', height: 'auto', maxHeight: '100px' }}
-            priority 
-          />
+        {/* Header Logo & Title */}
+        <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+          <div style={{
+            display: 'inline-flex',
+            padding: '8px 14px',
+            borderRadius: '12px',
+            marginBottom: '6px'
+          }}>
+            <Image 
+              src="/logo.png-removebg-preview.png" 
+              alt="HCM Lite Logo" 
+              width={160} 
+              height={95} 
+              style={{ objectFit: 'contain', width: 'auto', height: 'auto', maxHeight: '85px' }}
+              priority 
+            />
+          </div>
+          <h2 style={{ fontSize: '15px', fontWeight: '600', color: '#cbd5e1', margin: '2px 0' }}>
+            HCM Lite Portal
+          </h2>
+          <p style={{ fontSize: '12px', color: '#94a3b8', margin: '8px 0 0 0' }}>
+            Enter any details to access the Employee or HR Dashboard.
+          </p>
         </div>
 
-        <p style={{ color: '#B0CBDC', fontSize: '13px', marginBottom: '20px', marginTop: '2px', lineHeight: '1.4' }}>
-          Enter any details to access the Employee or HR Dashboard.
-        </p>
-
-        {errorMsg && (
-          <div style={{ 
-            background: 'rgba(253, 222, 222, 0.9)', 
-            color: '#A81D1D', 
-            padding: '10px', 
-            borderRadius: '8px', 
-            marginBottom: '18px', 
-            fontSize: '13px', 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: '8px',
-            textAlign: 'left'
+        {error && (
+          <div style={{
+            background: 'rgba(225, 29, 72, 0.2)',
+            border: '1px solid rgba(225, 29, 72, 0.4)',
+            color: '#fca5a5',
+            padding: '10px 12px',
+            borderRadius: '10px',
+            fontSize: '12px',
+            fontWeight: '600',
+            marginBottom: '16px',
+            textAlign: 'center'
           }}>
-            <AlertCircle size={18} style={{ flexShrink: 0 }} />
-            {errorMsg}
+            {error}
           </div>
         )}
 
-        {successMsg && (
-          <div style={{ 
-            background: 'rgba(222, 253, 235, 0.9)', 
-            color: '#1D6B39', 
-            padding: '10px', 
-            borderRadius: '8px', 
-            marginBottom: '18px', 
-            fontSize: '13px', 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: '8px',
-            textAlign: 'left'
-          }}>
-            <CheckCircle size={18} style={{ flexShrink: 0 }} />
-            {successMsg}
-          </div>
-        )}
-
-        {/* Legal Name */}
-        <div style={{ marginBottom: '14px', textAlign: 'left' }}>
-          <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', color: '#D0E1ED', fontWeight: '500' }}>
-            Full Legal Name *
-          </label>
-          <div style={{ position: 'relative' }}>
-            <User size={17} style={{ position: 'absolute', left: '14px', top: '13px', color: '#9AB8CC' }} />
-            <input 
-              type="text" 
-              value={name} 
-              onChange={(e) => setName(e.target.value)} 
+        {/* Form */}
+        <form onSubmit={handleSignup} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          <div>
+            <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#cbd5e1', marginBottom: '6px' }}>
+              Full Legal Name *
+            </label>
+            <input
+              type="text"
+              required
+              value={name}
+              onChange={(e) => setName(e.target.value)}
               placeholder="e.g. Ayyan Qureshi"
-              required
-              style={{ 
-                width: '100%', 
-                padding: '12px 12px 12px 42px', 
-                background: 'rgba(30, 60, 92, 0.6)', 
-                border: '1px solid rgba(255,255,255,0.15)', 
-                borderRadius: '10px', 
-                color: 'white', 
-                fontSize: '14px', 
-                boxSizing: 'border-box',
-                outline: 'none'
+              style={{
+                width: '100%',
+                padding: '11px 14px',
+                borderRadius: '10px',
+                border: '1px solid rgba(255, 255, 255, 0.15)',
+                background: 'rgba(15, 23, 42, 0.6)',
+                fontSize: '13px',
+                color: '#ffffff',
+                outline: 'none',
+                boxSizing: 'border-box'
               }}
             />
           </div>
-        </div>
 
-        {/* Account Role */}
-        <div style={{ marginBottom: '14px', textAlign: 'left' }}>
-          <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', color: '#D0E1ED', fontWeight: '500' }}>
-            Account Role *
-          </label>
-          <div style={{ display: 'flex', gap: '10px' }}>
-            <button
-              type="button"
-              onClick={() => handleRoleSelect('Employee')}
+          {/* Account Role Selector */}
+          <div>
+            <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#cbd5e1', marginBottom: '6px' }}>
+              Account Role *
+            </label>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+              <button
+                type="button"
+                onClick={() => handleRoleChange('Employee')}
+                style={{
+                  padding: '10px',
+                  borderRadius: '10px',
+                  border: role === 'Employee' ? '1px solid #38bdf8' : '1px solid rgba(255, 255, 255, 0.15)',
+                  background: role === 'Employee' ? 'rgba(56, 189, 248, 0.25)' : 'rgba(15, 23, 42, 0.6)',
+                  color: role === 'Employee' ? '#38bdf8' : '#94a3b8',
+                  fontSize: '13px',
+                  fontWeight: '700',
+                  cursor: 'pointer',
+                  textAlign: 'center',
+                  transition: 'all 0.2s ease'
+                }}
+              >
+                Employee
+              </button>
+              <button
+                type="button"
+                onClick={() => handleRoleChange('HR')}
+                style={{
+                  padding: '10px',
+                  borderRadius: '10px',
+                  border: role === 'HR' ? '1px solid #38bdf8' : '1px solid rgba(255, 255, 255, 0.15)',
+                  background: role === 'HR' ? 'rgba(56, 189, 248, 0.25)' : 'rgba(15, 23, 42, 0.6)',
+                  color: role === 'HR' ? '#38bdf8' : '#94a3b8',
+                  fontSize: '13px',
+                  fontWeight: '700',
+                  cursor: 'pointer',
+                  textAlign: 'center',
+                  transition: 'all 0.2s ease'
+                }}
+              >
+                HR Specialist
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#cbd5e1', marginBottom: '6px' }}>
+              Work Email Address *
+            </label>
+            <input
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               style={{
-                flex: 1,
-                padding: '10px',
-                borderRadius: '8px',
-                border: role === 'Employee' ? '1px solid #85E3D2' : '1px solid rgba(255,255,255,0.15)',
-                background: role === 'Employee' ? 'rgba(133, 227, 210, 0.25)' : 'rgba(30, 60, 92, 0.6)',
-                color: 'white',
+                width: '100%',
+                padding: '11px 14px',
+                borderRadius: '10px',
+                border: '1px solid rgba(255, 255, 255, 0.15)',
+                background: 'rgba(15, 23, 42, 0.6)',
+                fontSize: '13px',
+                color: '#ffffff',
+                outline: 'none',
+                boxSizing: 'border-box'
+              }}
+            />
+          </div>
+
+          <div>
+            <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#cbd5e1', marginBottom: '6px' }}>
+              Password *
+            </label>
+            <input
+              type="password"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '11px 14px',
+                borderRadius: '10px',
+                border: '1px solid rgba(255, 255, 255, 0.15)',
+                background: 'rgba(15, 23, 42, 0.6)',
+                fontSize: '13px',
+                color: '#ffffff',
+                outline: 'none',
+                boxSizing: 'border-box'
+              }}
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            style={{
+              marginTop: '6px',
+              width: '100%',
+              padding: '12px',
+              borderRadius: '10px',
+              border: 'none',
+              background: 'linear-gradient(90deg, #7dd3fc 0%, #38bdf8 100%)',
+              color: '#0f172a',
+              fontSize: '13px',
+              fontWeight: '700',
+              cursor: loading ? 'not-allowed' : 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px',
+              boxShadow: '0 4px 12px rgba(56, 189, 248, 0.3)'
+            }}
+          >
+            {loading ? 'Processing...' : 'Open Dashboard →'}
+          </button>
+        </form>
+
+        {/* Footer Link */}
+        <div style={{ textAlign: 'center', marginTop: '20px' }}>
+          <p style={{ fontSize: '12px', color: '#94a3b8', margin: 0 }}>
+            Already have an account?{' '}
+            <button
+              onClick={() => router.push('/')}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: '#38bdf8',
                 fontWeight: '600',
                 cursor: 'pointer',
-                fontSize: '13px'
+                padding: 0,
+                fontSize: '12px'
               }}
             >
-              Employee
+              Admin Login
             </button>
-            <button
-              type="button"
-              onClick={() => handleRoleSelect('HR')}
-              style={{
-                flex: 1,
-                padding: '10px',
-                borderRadius: '8px',
-                border: role === 'HR' ? '1px solid #85E3D2' : '1px solid rgba(255,255,255,0.15)',
-                background: role === 'HR' ? 'rgba(133, 227, 210, 0.25)' : 'rgba(30, 60, 92, 0.6)',
-                color: 'white',
-                fontWeight: '600',
-                cursor: 'pointer',
-                fontSize: '13px'
-              }}
-            >
-              HR Specialist
-            </button>
-          </div>
+          </p>
         </div>
-
-        {/* Email Address - Accepts ANY email input */}
-        <div style={{ marginBottom: '14px', textAlign: 'left' }}>
-          <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', color: '#D0E1ED', fontWeight: '500' }}>
-            Work Email Address *
-          </label>
-          <div style={{ position: 'relative' }}>
-            <Mail size={17} style={{ position: 'absolute', left: '14px', top: '13px', color: '#9AB8CC' }} />
-            <input 
-              type="email" 
-              value={email} 
-              onChange={(e) => setEmail(e.target.value)} 
-              placeholder="Enter any email address"
-              required
-              style={{ 
-                width: '100%', 
-                padding: '12px 12px 12px 42px', 
-                background: 'rgba(30, 60, 92, 0.6)', 
-                border: '1px solid rgba(255,255,255,0.15)', 
-                borderRadius: '10px', 
-                color: 'white', 
-                fontSize: '14px', 
-                boxSizing: 'border-box',
-                outline: 'none'
-              }}
-            />
-          </div>
-        </div>
-
-        {/* Password */}
-        <div style={{ marginBottom: '20px', textAlign: 'left' }}>
-          <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', color: '#D0E1ED', fontWeight: '500' }}>
-            Password *
-          </label>
-          <div style={{ position: 'relative' }}>
-            <Lock size={17} style={{ position: 'absolute', left: '14px', top: '13px', color: '#9AB8CC' }} />
-            <input 
-              type="password" 
-              value={password} 
-              onChange={(e) => setPassword(e.target.value)} 
-              placeholder="Enter any password"
-              required
-              style={{ 
-                width: '100%', 
-                padding: '12px 12px 12px 42px', 
-                background: 'rgba(30, 60, 92, 0.6)', 
-                border: '1px solid rgba(255,255,255,0.15)', 
-                borderRadius: '10px', 
-                color: 'white', 
-                fontSize: '14px', 
-                boxSizing: 'border-box',
-                outline: 'none'
-              }}
-            />
-          </div>
-        </div>
-
-        {/* Button */}
-        <button type="submit" style={{ 
-          width: '100%', 
-          padding: '13px', 
-          background: '#6BB3E3', 
-          color: '#12304D', 
-          border: 'none', 
-          borderRadius: '10px', 
-          fontSize: '15px', 
-          fontWeight: 'bold', 
-          cursor: 'pointer', 
-          display: 'flex', 
-          alignItems: 'center', 
-          justifyContent: 'center', 
-          gap: '10px',
-          marginBottom: '18px',
-          boxShadow: '0 4px 15px rgba(0,0,0,0.15)'
-        }}>
-          Open Dashboard
-          <ArrowRight size={18} />
-        </button>
-
-        <p style={{ fontSize: '13px', color: '#B0CBDC', margin: 0 }}>
-          Already have an account?{' '}
-          <a href="/" style={{ color: '#85E3D2', textDecoration: 'none', fontWeight: '500' }}>
-            Admin Login
-          </a>
-        </p>
-      </form>
-    </main>
+      </div>
+    </div>
   );
 }
